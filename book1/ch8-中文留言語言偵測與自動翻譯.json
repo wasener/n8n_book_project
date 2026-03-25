@@ -1,0 +1,366 @@
+{
+  "name": "中文留言語言偵測與自動翻譯",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "89e6d57a-cda5-4dc2-8552-d1d45c0a37c4",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.comment }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You are a language detection tool. Respond with ONLY the ISO 639-1 language code (e.g., zh, en, ja, ko). Do not include any explanation, punctuation, or extra text."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        352,
+        0
+      ],
+      "id": "4d2d603f-fc17-4e39-8340-adabfd7ca66e",
+      "name": "Basic LLM Chain",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        288,
+        192
+      ],
+      "id": "d58ac925-bc40-4444-a213-2ea5bc6ade31",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "wbgWKEEZXN7g30sh",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Google Sheets').item.json.comment }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "你是一個專業翻譯員。 請將以下中文文字翻譯成英文。 只輸出翻譯結果，不要加任何解釋、前言或後記。"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        464,
+        176
+      ],
+      "id": "4dbc6fb9-99fc-4637-abb1-7915e6d7630a",
+      "name": "Basic LLM Chain1"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1s6rT8XIwH3sS2IhRshAwlc2LdVeYyeKYsqhCS4AY4ek",
+          "mode": "list",
+          "cachedResultName": "電商留言表",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1s6rT8XIwH3sS2IhRshAwlc2LdVeYyeKYsqhCS4AY4ek/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "客服留言",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1s6rT8XIwH3sS2IhRshAwlc2LdVeYyeKYsqhCS4AY4ek/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        208,
+        0
+      ],
+      "id": "719236ca-e231-464b-8791-4a0f43f6b655",
+      "name": "Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "NSFBZtWkjM8L3Owz",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        448,
+        352
+      ],
+      "id": "41ca6c0b-fadf-4cef-a8aa-ebbb58511469",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "wbgWKEEZXN7g30sh",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "1721537d-cba3-4bcc-95e8-b15d0b5b7037",
+              "leftValue": "={{ $json.text }}",
+              "rightValue": "zh",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        688,
+        0
+      ],
+      "id": "552d8509-a1e5-4926-bc2c-ab35162f731e",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1s6rT8XIwH3sS2IhRshAwlc2LdVeYyeKYsqhCS4AY4ek",
+          "mode": "list",
+          "cachedResultName": "電商留言表",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1s6rT8XIwH3sS2IhRshAwlc2LdVeYyeKYsqhCS4AY4ek/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "客服留言",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1s6rT8XIwH3sS2IhRshAwlc2LdVeYyeKYsqhCS4AY4ek/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "english_translation": "={{ $json.text }}",
+            "留言 ID": "={{ $('Google Sheets').item.json['留言 ID'] }}"
+          },
+          "matchingColumns": [
+            "留言 ID"
+          ],
+          "schema": [
+            {
+              "id": "留言 ID",
+              "displayName": "留言 ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "問題類型",
+              "displayName": "問題類型",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "留言主旨 (標題)",
+              "displayName": "留言主旨 (標題)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "comment",
+              "displayName": "comment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "english_translation",
+              "displayName": "english_translation",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        768,
+        176
+      ],
+      "id": "e2b4d6eb-4f51-4c6e-a70d-3bf3e708e6fb",
+      "name": "Update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "NSFBZtWkjM8L3Owz",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain1": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "440edfd8-71ef-43c4-b377-ea80a1c06db8",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c3b9e83492aa743310a5f4e3cf47e77d7b696b6cda5e85136c3390c6c7979615"
+  },
+  "id": "1iT6SGtBvUr0BW0N",
+  "tags": []
+}

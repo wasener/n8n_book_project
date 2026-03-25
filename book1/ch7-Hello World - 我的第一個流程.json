@@ -1,0 +1,83 @@
+{
+  "name": "Hello World - 我的第一個流程",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "f2deffa3-cfe3-4875-9868-e706d1cce6cf",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fbad6acc-3716-4843-b71a-ef01e8e67ce6",
+              "name": "message",
+              "value": "Hello World! 這是我的第一個 n8n 工作流程！",
+              "type": "string"
+            },
+            {
+              "id": "d5ee22f4-1556-4175-810d-2ff577275e86",
+              "name": "author",
+              "value": "王小明",
+              "type": "string"
+            },
+            {
+              "id": "73184568-da64-4a7b-b01d-9ed8877bb859",
+              "name": "timestamp",
+              "value": "={{ $now.toFormat('yyyy-MM-dd HH:mm:ss') }}",
+              "type": "string"
+            },
+            {
+              "id": "bb7b0e46-c950-49d7-a089-f43d9877734d",
+              "name": "isFirstWorkflow",
+              "value": true,
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "1dcb3820-af27-4b25-b20d-48e091e1d7b8",
+      "name": "Edit Fields"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "88c235ff-a59d-4054-a385-b8019634c271",
+  "meta": {
+    "instanceId": "a4d9eb9c801d5467f1edf3291ca65c7cc3fafa7c027e9e58fbcfb62bd4da00d4"
+  },
+  "id": "kccG3yPRSxd61u4h",
+  "tags": []
+}

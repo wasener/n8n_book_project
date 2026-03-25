@@ -1,0 +1,228 @@
+{
+  "name": "Hacker News 熱門文章追蹤器",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "1e2f0efa-d757-415b-9c20-cf946208db2e",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "resource": "all",
+        "limit": 50,
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.hackerNews",
+      "typeVersion": 1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "aa74a434-92be-4f78-a361-9d4fff7b3ea3",
+      "name": "Get many items"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "42b6c8ad-dd92-4efa-87da-2b14ff3a00c3",
+              "leftValue": "={{ $json.title }}",
+              "rightValue": " AI",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "82e30c75-0072-49ce-a9c4-971c35340e52",
+              "leftValue": "={{ $json.title }}",
+              "rightValue": "LLM",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            },
+            {
+              "id": "b020e1a9-179c-4509-a3cb-9bc766563619",
+              "leftValue": "={{ $json.title }}",
+              "rightValue": "GPT",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {
+          "ignoreCase": true
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        416,
+        0
+      ],
+      "id": "ea0ccd13-c08f-4081-adbb-74a0f70c0134",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fde24e72-10ee-4c3a-9180-a969b0d9df67",
+              "name": "articleTitle",
+              "value": "={{ $json.title }}",
+              "type": "string"
+            },
+            {
+              "id": "7c296bdb-0aa9-412e-91e6-bdb35ccb9dc8",
+              "name": "articleUrl",
+              "value": "={{ $json.url  || 'https://news.ycombinator.com/item?id=' + $json.story_id}}",
+              "type": "string"
+            },
+            {
+              "id": "6b79f049-e8d8-44a3-a5ad-99172beeae2c",
+              "name": "discussionUrl",
+              "value": "={{ 'https://news.ycombinator.com/item?id=' + $json.story_id }}",
+              "type": "string"
+            },
+            {
+              "id": "0e99f884-ec3a-430b-a4cb-7d69b75ce924",
+              "name": "score",
+              "value": "= {{ $json.points }}",
+              "type": "string"
+            },
+            {
+              "id": "71f98152-1e94-453e-b147-5b91f317407b",
+              "name": "commentCount",
+              "value": "={{ $json.num_comments }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        640,
+        -96
+      ],
+      "id": "bdefebae-c55b-4d0c-8fb3-8e730fbae725",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "fieldsToSummarize": {
+          "values": [
+            {
+              "aggregation": "concatenate",
+              "field": "articleTitle",
+              "separateBy": "other",
+              "customSeparator": " \\n"
+            },
+            {
+              "field": "=articleTitle"
+            },
+            {
+              "aggregation": "average",
+              "field": "=score"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.summarize",
+      "typeVersion": 1.1,
+      "position": [
+        800,
+        -16
+      ],
+      "id": "c2d0bbfc-75aa-4e13-acd6-18493037b7ed",
+      "name": "Summarize"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get many items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many items": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Summarize",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "8786dc47-6adb-435b-a447-7b5587857b31",
+  "meta": {
+    "instanceId": "10f237aeec4a8587e6297c5bcd4e2d8aa8a2765b3c774ad4a01a25ca837a5e1b"
+  },
+  "id": "wc0p8mXnOhMbADuI",
+  "tags": []
+}

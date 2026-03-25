@@ -1,0 +1,571 @@
+{
+  "name": "訂單狀態追蹤與通知系統",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 8,
+              "triggerAtMinute": 30
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "fcce4081-f55d-4bca-81af-80fb4c26cb45",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "url": "https://69b4caf6be587338e7144dfa.mockapi.io/api/v1/unique_id",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "ecffd57e-1d63-44bf-8a23-b9930dd90584",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.orderStatus }}",
+                    "rightValue": "pending",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "61f25865-128b-40b3-afb6-94d59623f832"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "待付款 pending"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "b4028e93-33f0-4bf6-b1d8-ee5eeb9c8562",
+                    "leftValue": "={{ $json.orderStatus }}",
+                    "rightValue": "processing",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "處理中 processing"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "0dc3c836-d4d7-4e93-a601-9050f2efe7e0",
+                    "leftValue": "={{ $json.orderStatus }}",
+                    "rightValue": "shipped",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "已出貨 shipped"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "0f079892-9034-46bc-a089-255f1ab70374",
+                    "leftValue": "={{ $json.orderStatus }}",
+                    "rightValue": "completed",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "已完成 completed"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "ignoreCase": true,
+          "allMatchingOutputs": false
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        400,
+        -48
+      ],
+      "id": "e8434e85-32f4-4ebe-9e8b-6b773515795c",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f74e4ecf-8bfc-4ab1-9079-9938d45f5b5d",
+              "name": "noticeType",
+              "value": "payment_reminder",
+              "type": "string"
+            },
+            {
+              "id": "99b81fdd-c1f9-404b-a094-afcc2bbf91c0",
+              "name": "toEmail",
+              "value": "={{ $json.customerEmail }}",
+              "type": "string"
+            },
+            {
+              "id": "32723a31-5d1b-4a18-812b-9be3bdffc03f",
+              "name": "toName",
+              "value": "={{ $json.customerName }}",
+              "type": "string"
+            },
+            {
+              "id": "3bffe6f6-aa40-4af5-ad4c-6c7eb4de8409",
+              "name": "subject",
+              "value": "=【揪愛買】提醒您，訂單 {{$json.orderId}} 尚未完成付款",
+              "type": "string"
+            },
+            {
+              "id": "701200a2-3d3b-4f88-9617-062dac0b4b00",
+              "name": "orderId",
+              "value": "= {{ $json.orderId }}",
+              "type": "string"
+            },
+            {
+              "id": "6469acab-9a1f-48da-b318-cd23aa413cdc",
+              "name": "amount",
+              "value": "={{ $json.orderAmount }}",
+              "type": "string"
+            },
+            {
+              "id": "3e402397-430e-453d-85be-fa0bbf235a37",
+              "name": "payment",
+              "value": "={{ $json.paymentMethod }}",
+              "type": "string"
+            },
+            {
+              "id": "3b88a1b5-3ff5-4b0c-a496-ada4b2917ae6",
+              "name": "items",
+              "value": "={{ $json.items }}",
+              "type": "string"
+            },
+            {
+              "id": "89be7c0a-592e-40bb-8a69-b5b167c4c553",
+              "name": "deadline",
+              "value": "= {{ $now.plus(48, 'hours').format('yyyy-MM-dd HH:mm') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        768,
+        -160
+      ],
+      "id": "7c7c883b-7f30-4fbc-b302-8797c3b0ddda",
+      "name": "催繳通知"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f74e4ecf-8bfc-4ab1-9079-9938d45f5b5d",
+              "name": "noticeType",
+              "value": "payment_reminder",
+              "type": "string"
+            },
+            {
+              "id": "99b81fdd-c1f9-404b-a094-afcc2bbf91c0",
+              "name": "toEmail",
+              "value": "={{ $json.customerEmail }}",
+              "type": "string"
+            },
+            {
+              "id": "32723a31-5d1b-4a18-812b-9be3bdffc03f",
+              "name": "toName",
+              "value": "={{ $json.customerName }}",
+              "type": "string"
+            },
+            {
+              "id": "3bffe6f6-aa40-4af5-ad4c-6c7eb4de8409",
+              "name": "subject",
+              "value": "=【揪愛買】您的訂單{{$json.orderId}}正在準備出貨中",
+              "type": "string"
+            },
+            {
+              "id": "701200a2-3d3b-4f88-9617-062dac0b4b00",
+              "name": "orderId",
+              "value": "= {{ $json.orderId }}",
+              "type": "string"
+            },
+            {
+              "id": "6469acab-9a1f-48da-b318-cd23aa413cdc",
+              "name": "amount",
+              "value": "={{ $json.orderAmount }}",
+              "type": "string"
+            },
+            {
+              "id": "3e402397-430e-453d-85be-fa0bbf235a37",
+              "name": "payment",
+              "value": "={{ $json.paymentMethod }}",
+              "type": "string"
+            },
+            {
+              "id": "3b88a1b5-3ff5-4b0c-a496-ada4b2917ae6",
+              "name": "items",
+              "value": "={{ $json.items }}",
+              "type": "string"
+            },
+            {
+              "id": "89be7c0a-592e-40bb-8a69-b5b167c4c553",
+              "name": "deadline",
+              "value": "= {{ $now.plus(48, 'hours').format('yyyy-MM-dd HH:mm') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        880,
+        -48
+      ],
+      "id": "91c91666-db82-4885-82e9-bf2888ea128b",
+      "name": "備貨通知"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f74e4ecf-8bfc-4ab1-9079-9938d45f5b5d",
+              "name": "noticeType",
+              "value": "payment_reminder",
+              "type": "string"
+            },
+            {
+              "id": "99b81fdd-c1f9-404b-a094-afcc2bbf91c0",
+              "name": "toEmail",
+              "value": "={{ $json.customerEmail }}",
+              "type": "string"
+            },
+            {
+              "id": "32723a31-5d1b-4a18-812b-9be3bdffc03f",
+              "name": "toName",
+              "value": "={{ $json.customerName }}",
+              "type": "string"
+            },
+            {
+              "id": "3bffe6f6-aa40-4af5-ad4c-6c7eb4de8409",
+              "name": "subject",
+              "value": "=【揪愛買】您的訂單{{$json.orderId}}已出貨！",
+              "type": "string"
+            },
+            {
+              "id": "701200a2-3d3b-4f88-9617-062dac0b4b00",
+              "name": "orderId",
+              "value": "= {{ $json.orderId }}",
+              "type": "string"
+            },
+            {
+              "id": "6469acab-9a1f-48da-b318-cd23aa413cdc",
+              "name": "amount",
+              "value": "={{ $json.orderAmount }}",
+              "type": "string"
+            },
+            {
+              "id": "3e402397-430e-453d-85be-fa0bbf235a37",
+              "name": "payment",
+              "value": "={{ $json.paymentMethod }}",
+              "type": "string"
+            },
+            {
+              "id": "3b88a1b5-3ff5-4b0c-a496-ada4b2917ae6",
+              "name": "items",
+              "value": "={{ $json.items }}",
+              "type": "string"
+            },
+            {
+              "id": "89be7c0a-592e-40bb-8a69-b5b167c4c553",
+              "name": "deadline",
+              "value": "= {{ $now.plus(48, 'hours').format('yyyy-MM-dd HH:mm') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        768,
+        48
+      ],
+      "id": "6b0f339f-468b-4dfc-aa71-87e21c5a824b",
+      "name": "物流追蹤通知"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f74e4ecf-8bfc-4ab1-9079-9938d45f5b5d",
+              "name": "noticeType",
+              "value": "payment_reminder",
+              "type": "string"
+            },
+            {
+              "id": "99b81fdd-c1f9-404b-a094-afcc2bbf91c0",
+              "name": "toEmail",
+              "value": "={{ $json.customerEmail }}",
+              "type": "string"
+            },
+            {
+              "id": "32723a31-5d1b-4a18-812b-9be3bdffc03f",
+              "name": "toName",
+              "value": "={{ $json.customerName }}",
+              "type": "string"
+            },
+            {
+              "id": "3bffe6f6-aa40-4af5-ad4c-6c7eb4de8409",
+              "name": "subject",
+              "value": "=【揪愛買】感謝您的訂購！邀請您填寫購物體驗問卷",
+              "type": "string"
+            },
+            {
+              "id": "701200a2-3d3b-4f88-9617-062dac0b4b00",
+              "name": "orderId",
+              "value": "= {{ $json.orderId }}",
+              "type": "string"
+            },
+            {
+              "id": "6469acab-9a1f-48da-b318-cd23aa413cdc",
+              "name": "amount",
+              "value": "={{ $json.orderAmount }}",
+              "type": "string"
+            },
+            {
+              "id": "3e402397-430e-453d-85be-fa0bbf235a37",
+              "name": "payment",
+              "value": "={{ $json.paymentMethod }}",
+              "type": "string"
+            },
+            {
+              "id": "3b88a1b5-3ff5-4b0c-a496-ada4b2917ae6",
+              "name": "items",
+              "value": "={{ $json.items }}",
+              "type": "string"
+            },
+            {
+              "id": "89be7c0a-592e-40bb-8a69-b5b167c4c553",
+              "name": "deadline",
+              "value": "= {{ $now.plus(48, 'hours').format('yyyy-MM-dd HH:mm') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        880,
+        160
+      ],
+      "id": "889a0b82-df19-4999-b827-e1a0d0343a3a",
+      "name": "滿意度調查"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 計算已完成訂單的營業額統計\nconst orders = $input.all();\nlet totalRevenue = 0;\nlet creditCardTotal = 0;\nlet atmTotal = 0;\nlet linePayTotal = 0;\nlet otherTotal = 0;\n\nfor (const order of orders) {\n  const amount = order.json.orderAmount;\n  totalRevenue += amount;\n  \n  const payment = order.json.paymentMethod || '';\n  if (payment.includes('信用卡')) creditCardTotal += amount;\n  else if (payment.includes('ATM')) atmTotal += amount;\n  else if (payment.includes('LINE Pay')) linePayTotal += amount;\n  else otherTotal += amount;\n}\n\nreturn [{\n  json: {\n    reportDate: new Date().toISOString().split('T')[0],\n    totalOrders: orders.length,\n    totalRevenue: totalRevenue,\n    avgOrderValue: Math.round(totalRevenue / orders.length),\n    creditCardTotal, atmTotal, linePayTotal, otherTotal\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        656,
+        256
+      ],
+      "id": "7f52077b-9bcb-4989-a108-036a0e6a178c",
+      "name": "營業額計算"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.toEmail }}",
+        "subject": "={{ $json.subject }}",
+        "message": "={{ $json.toName }} 您好，  感謝您在「揪愛買」下訂，以下是您的訂單資訊：  訂單編號：{{ $json.orderId }} 購買商品：{{ $json.items }} 訂單金額：NT${{ $json.amount }} 付款方式：{{ $json.payment }}  目前此筆訂單尚未完成付款。 請於 {{ $json.deadline }} 前完成繳費， 逾期訂單將自動取消。  如您已完成付款，請忽略本信件，系統將於入帳後自動更新訂單狀態。  揪愛買客服中心 客服專線：0800-000-168 服務時間：週一至週五 9:00~18:00",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        976,
+        -160
+      ],
+      "id": "c2f15eb7-88f7-4383-9f38-9719e8586622",
+      "name": "Send a message",
+      "webhookId": "1eac2872-4408-4345-902f-2d1d79723025",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "yhJDGv4k7puV9vkc",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "催繳通知",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "備貨通知",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "物流追蹤通知",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "滿意度調查",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "營業額計算",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "催繳通知": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "2673d7a0-2a44-4bd9-9308-f262c1b1118c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "10f237aeec4a8587e6297c5bcd4e2d8aa8a2765b3c774ad4a01a25ca837a5e1b"
+  },
+  "id": "YZ5sluwEFUmrd5hm",
+  "tags": []
+}

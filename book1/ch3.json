@@ -1,0 +1,791 @@
+{
+  "name": "ch3",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "select",
+        "schema": {
+          "__rl": true,
+          "value": "public",
+          "mode": "list",
+          "cachedResultName": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "=lunar_products",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        208,
+        0
+      ],
+      "id": "adefb8c9-e9fb-4adc-a788-36899857b843",
+      "name": "Select rows from a table",
+      "credentials": {
+        "postgres": {
+          "id": "YOlgH28fNlZaz4Ck",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "formTitle": "預購訂單",
+        "formDescription": "年菜商品預購訂單",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "name"
+            },
+            {
+              "fieldLabel": "phone"
+            },
+            {
+              "fieldLabel": "email"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.5,
+      "position": [
+        16,
+        0
+      ],
+      "id": "abd9b36f-0570-4ade-a960-67f2f4136b2b",
+      "name": "On form submission",
+      "webhookId": "7544880a-9e47-4279-8a8d-b5df45fb5c12"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1046e21a-fa53-4f56-8c3d-a3383fe105cb",
+              "name": "下訂商品",
+              "value": "={{ $json[\"預購商品編號\"] }}",
+              "type": "array"
+            },
+            {
+              "id": "0c3863d2-bf39-464e-99ff-0dc7f4255b7e",
+              "name": "下訂數量",
+              "value": "={{ $json[\"訂購數量\"] }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        624,
+        0
+      ],
+      "id": "165b3821-aac1-4118-9589-d203a0102e2c",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "select stock_limit from lunar_products where product_name='{{ $json['下訂商品'][0] }}'",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        832,
+        0
+      ],
+      "id": "e88e73cc-7142-479d-ba34-1fcdac93d56e",
+      "name": "Execute a SQL query",
+      "credentials": {
+        "postgres": {
+          "id": "YOlgH28fNlZaz4Ck",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "ddsd@dsajfkds",
+        "subject": "agdga",
+        "message": "agds",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        336,
+        384
+      ],
+      "id": "2cd6f54e-c7b4-4ba6-bd58-aec86804fac9",
+      "name": "[庫存不足] 回傳「商品已售完」錯誤訊息",
+      "webhookId": "cda46f42-8950-48a7-88d4-e0d13646ff0e",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "kczST4AqCCpnwgQj",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "ddd@gmail.com",
+        "subject": "ddd",
+        "message": "dddd",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        592,
+        224
+      ],
+      "id": "d1f126e7-63dc-4767-93ec-9f8c77fa1a4d",
+      "name": "發送訂購確認信給客戶",
+      "webhookId": "cda46f42-8950-48a7-88d4-e0d13646ff0e",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "kczST4AqCCpnwgQj",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "lunar_products",
+          "mode": "list",
+          "cachedResultName": "lunar_products"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": 0,
+            "price": 0,
+            "stock_limit": 0,
+            "current_stock": 0
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "product_name",
+              "displayName": "product_name",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "category",
+              "displayName": "category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "price",
+              "displayName": "price",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "stock_limit",
+              "displayName": "stock_limit",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "current_stock",
+              "displayName": "current_stock",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "pickup_date",
+              "displayName": "pickup_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "product_id",
+              "displayName": "product_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        336,
+        224
+      ],
+      "id": "af9ce5c8-a34a-412f-bbcd-2e5795b70f6f",
+      "name": "扣減庫存",
+      "credentials": {
+        "postgres": {
+          "id": "YOlgH28fNlZaz4Ck",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "0ec44244-d52a-43d9-a175-968c6a6d320b",
+              "leftValue": "={{ $json.stock_limit.toNumber()  }}",
+              "rightValue": "={{ $('Edit Fields').item.json['下訂數量'] }}",
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        16,
+        240
+      ],
+      "id": "7feddca1-c725-47b1-9763-ac411a6bf2ae",
+      "name": "庫存 >= 訂購數量？"
+    },
+    {
+      "parameters": {
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "預購商品編號",
+              "fieldType": "checkbox",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "={{ $json.product_name}}"
+                  },
+                  {
+                    "option": "=紅燒蹄膀禮盒"
+                  },
+                  {
+                    "option": "干貝蘿蔔糕（3斤裝）"
+                  },
+                  {
+                    "option": "東坡肉八方進寶"
+                  },
+                  {
+                    "option": "清蒸鱸魚年年有餘"
+                  },
+                  {
+                    "option": "十全十美組合包"
+                  }
+                ]
+              },
+              "limitSelection": "range"
+            },
+            {
+              "fieldLabel": "訂購數量",
+              "fieldType": "number"
+            },
+            {
+              "fieldLabel": "created_at",
+              "fieldType": "date",
+              "fieldName": "={{ $now.toISO() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        416,
+        0
+      ],
+      "id": "c24a7d77-f15c-4f3d-98f1-6ec7a7d77e8d",
+      "name": "接收訂單",
+      "webhookId": "9ee7aed7-6007-48ec-b276-db5d8a6c4b9f"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        864,
+        240
+      ],
+      "id": "89b16aed-4604-416b-b636-291667665018",
+      "name": "早上 8 點檢查"
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "lunar_products",
+          "mode": "list",
+          "cachedResultName": "lunar_products"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1072,
+        240
+      ],
+      "id": "61554ac1-2ac6-49fe-9ada-003d5ab44a0e",
+      "name": "查剩餘庫存",
+      "credentials": {
+        "postgres": {
+          "id": "YOlgH28fNlZaz4Ck",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "315fe4f5-bb82-43da-adb6-01b3b62a48ae",
+              "leftValue": "",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1280,
+        240
+      ],
+      "id": "a72f5cb0-b958-45dc-b041-b3e7763392c5",
+      "name": "是否低於預購上限的 20%"
+    },
+    {
+      "parameters": {
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.line",
+      "typeVersion": 1,
+      "position": [
+        1488,
+        144
+      ],
+      "id": "b7d8a7f8-8cc3-4bac-8309-897b53be6e81",
+      "name": "通知給採購人員"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        864,
+        576
+      ],
+      "id": "9a1b1f64-8c9d-4624-8080-06e4834eefff",
+      "name": "每天檢查取貨日"
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "lunar_products",
+          "mode": "list",
+          "cachedResultName": "lunar_products"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1072,
+        576
+      ],
+      "id": "f9bcdf5e-6578-4411-8089-a8157ff8f46a",
+      "name": "取貨前三天的訂單",
+      "credentials": {
+        "postgres": {
+          "id": "YOlgH28fNlZaz4Ck",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "adsf@dsaf",
+        "subject": "sdaf",
+        "message": "sdaf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1296,
+        576
+      ],
+      "id": "3fc54a22-2287-40bf-bdf7-b3bc665f5bcb",
+      "name": "提醒客戶記得取貨",
+      "webhookId": "d3fbefe8-5480-4ca0-adb6-82131d0ab4fe",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "kczST4AqCCpnwgQj",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        864,
+        848
+      ],
+      "id": "b906cea9-58a4-4c3b-9f14-ecbc02a6ef78",
+      "name": "每週一統計"
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "lunar_products",
+          "mode": "list",
+          "cachedResultName": "lunar_products"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1056,
+        848
+      ],
+      "id": "3eb2818c-1921-450c-8cc7-36179be8a5a0",
+      "name": "上週的年菜銷售統計報表",
+      "credentials": {
+        "postgres": {
+          "id": "YOlgH28fNlZaz4Ck",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "adsf@dsaf",
+        "subject": "sdaf",
+        "message": "sdaf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1264,
+        848
+      ],
+      "id": "c65996e2-1d97-45bb-835e-b051d22e72f9",
+      "name": "寄給管理層",
+      "webhookId": "d3fbefe8-5480-4ca0-adb6-82131d0ab4fe",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "kczST4AqCCpnwgQj",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Select rows from a table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Select rows from a table": {
+      "main": [
+        [
+          {
+            "node": "接收訂單",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a SQL query": {
+      "main": [
+        [
+          {
+            "node": "庫存 >= 訂購數量？",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "扣減庫存": {
+      "main": [
+        [
+          {
+            "node": "發送訂購確認信給客戶",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "庫存 >= 訂購數量？": {
+      "main": [
+        [
+          {
+            "node": "扣減庫存",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[庫存不足] 回傳「商品已售完」錯誤訊息",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "接收訂單": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "早上 8 點檢查": {
+      "main": [
+        [
+          {
+            "node": "查剩餘庫存",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "查剩餘庫存": {
+      "main": [
+        [
+          {
+            "node": "是否低於預購上限的 20%",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "是否低於預購上限的 20%": {
+      "main": [
+        [
+          {
+            "node": "通知給採購人員",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "每天檢查取貨日": {
+      "main": [
+        [
+          {
+            "node": "取貨前三天的訂單",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "取貨前三天的訂單": {
+      "main": [
+        [
+          {
+            "node": "提醒客戶記得取貨",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "每週一統計": {
+      "main": [
+        [
+          {
+            "node": "上週的年菜銷售統計報表",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "上週的年菜銷售統計報表": {
+      "main": [
+        [
+          {
+            "node": "寄給管理層",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "a1cd0803-d16c-46c9-ba3b-b6db0e142345",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a4d9eb9c801d5467f1edf3291ca65c7cc3fafa7c027e9e58fbcfb62bd4da00d4"
+  },
+  "id": "S0Qxffhoih63UCRh",
+  "tags": []
+}

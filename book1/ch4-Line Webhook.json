@@ -1,0 +1,80 @@
+{
+  "name": "Line webhook",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "cbf0f4c7-5799-47d0-adc6-bfdc88b02808",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -288,
+        -208
+      ],
+      "id": "aa5352d5-d46d-4d95-8f9b-63d884e93c24",
+      "name": "Webhook",
+      "webhookId": "cbf0f4c7-5799-47d0-adc6-bfdc88b02808"
+    },
+    {
+      "parameters": {
+        "replyToken": "={{ $json.body.events[0].replyToken }}",
+        "messages": {
+          "values": [
+            {
+              "quoteToken": "={{ $json.body.events[0].message.quoteToken }}",
+              "text": "=✅ 報到成功！\\n時間：{{$now}}"
+            }
+          ]
+        }
+      },
+      "type": "@aotoki/n8n-nodes-line-messaging.lineMessaging",
+      "typeVersion": 1,
+      "position": [
+        -80,
+        -208
+      ],
+      "id": "e52214b2-58f4-4ef0-acf3-fc87bb040642",
+      "name": "Line Messaging",
+      "credentials": {
+        "lineMessagingApi": {
+          "id": "D7JZAs2gY5czhzF0",
+          "name": "Line Messaging account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Line Messaging",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Line Messaging": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "e36c52fb-7a94-4dc8-ad78-2335b8a98bdb",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a4d9eb9c801d5467f1edf3291ca65c7cc3fafa7c027e9e58fbcfb62bd4da00d4"
+  },
+  "id": "0xcrrRwhkYGP64lU",
+  "tags": []
+}

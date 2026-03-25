@@ -1,0 +1,347 @@
+{
+  "name": "學生請假系統 - 表單自動存檔",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "student-leave",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -128,
+        -64
+      ],
+      "id": "51e3cc9f-ce86-47df-a6cd-881509d95c0a",
+      "name": "Webhook",
+      "webhookId": "fe869520-2021-4968-928d-deb463b7515f"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0fde3bb6-6940-4604-b57c-5214162a735f",
+              "name": "submitTime",
+              "value": "={{ $now.format('yyyy-MM-dd HH:mm:ss') }}",
+              "type": "string"
+            },
+            {
+              "id": "4c6de1de-5be2-4836-b395-c927b42b84ca",
+              "name": "studentId",
+              "value": "={{ $json.body.studentId }}",
+              "type": "string"
+            },
+            {
+              "id": "f81cb553-ee46-4207-801f-8b32cb5f81de",
+              "name": "studentName",
+              "value": "= {{ $json.body.name }}",
+              "type": "string"
+            },
+            {
+              "id": "e5687643-6801-4678-8ad6-52f245bee89b",
+              "name": "department",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "2c344a1a-841f-449f-aa16-94ce98308164",
+              "name": "leaveType",
+              "value": "={{ $json.body.leaveType }}",
+              "type": "string"
+            },
+            {
+              "id": "12fbe030-818b-4d39-b4ff-8f820677e3dd",
+              "name": "timing",
+              "value": "={{ $json.body.leaveAdvance }}",
+              "type": "string"
+            },
+            {
+              "id": "27ddf84c-5639-499d-9f84-6d4c618501b4",
+              "name": "startDate",
+              "value": "={{ $json.body.startDate }}",
+              "type": "string"
+            },
+            {
+              "id": "a6a86570-cf27-461d-87c6-a32c8f5c079f",
+              "name": "endDate",
+              "value": "={{ $json.body.endDate }}",
+              "type": "string"
+            },
+            {
+              "id": "ccc43df5-4f11-4c13-996e-2e714c9da115",
+              "name": "days",
+              "value": "={{ $json.body.leaveDays }}",
+              "type": "string"
+            },
+            {
+              "id": "6ad89e48-0016-460d-8826-f556e94456fc",
+              "name": "reason",
+              "value": "={{ $json.body.reason }}",
+              "type": "string"
+            },
+            {
+              "id": "e1b5041a-6210-4102-b7af-8ba7eeae2145",
+              "name": "attachmentUrl",
+              "value": "={{ $json.body.proofLink }}",
+              "type": "string"
+            },
+            {
+              "id": "f49eaec0-3a12-40b0-a71c-908938715150",
+              "name": "email",
+              "value": "={{ $json.body.email }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        80,
+        -64
+      ],
+      "id": "138375de-7e1f-4ee8-96ba-53dffe88ae13",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1v9Y9n9WYZ-gHTCiEu0BFE_uCPx2ADI6bmvXpfmiPEA0",
+          "mode": "list",
+          "cachedResultName": "學生請假記錄表",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1v9Y9n9WYZ-gHTCiEu0BFE_uCPx2ADI6bmvXpfmiPEA0/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "工作表1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1v9Y9n9WYZ-gHTCiEu0BFE_uCPx2ADI6bmvXpfmiPEA0/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "submitTime": "={{ $json.submitTime }}",
+            "studentId": "={{ $json.studentId }}",
+            "studentName": "={{ $json.studentName }}",
+            "department": "={{ $json.department }}",
+            "leaveType": "={{ $json.leaveType }}",
+            "timing": "={{ $json.timing }}",
+            "startDate": "={{ $json.startDate }}",
+            "endDate": "={{ $json.endDate }}",
+            "days": "={{ $json.days }}",
+            "reason": "={{ $json.reason }}",
+            "attachmentUrl": "={{ $json.attachmentUrl }}",
+            "email": "={{ $json.email }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "submitTime",
+              "displayName": "submitTime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "studentId",
+              "displayName": "studentId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "studentName",
+              "displayName": "studentName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "department",
+              "displayName": "department",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "leaveType",
+              "displayName": "leaveType",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "timing",
+              "displayName": "timing",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "startDate",
+              "displayName": "startDate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "endDate",
+              "displayName": "endDate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "days",
+              "displayName": "days",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "reason",
+              "displayName": "reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "attachmentUrl",
+              "displayName": "attachmentUrl",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        256,
+        -64
+      ],
+      "id": "ff29e43b-34e2-4e57-8f62-7e1cda99ba73",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "cBR7x7wrRrDeyoLS",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.email }}",
+        "subject": "=【請假確認】{{ $json.studentName }} 同學的 {{ $json.leaveType }} 申請已送出",
+        "message": "={{ $json.studentName }} 同學您好，  您的請假申請已成功送出，以下是本次請假的摘要資訊：  學號：{{ $json.studentId }} 系所：{{ $json.department }} 請假類型：{{ $json.leaveType }} 請假區間：{{ $json.startDate }} ~ {{ $json.endDate }} 請假天數：{{ $json.days }} 天 事先/事後：{{ $json.timing }} 請假事由：{{ $json.reason }}  本系統已自動記錄您的請假資訊，請靜待導師及系辦審核。 如有任何問題，請洽系辦公室。\n\n此為系統自動發送，請勿直接回覆本信件。",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        432,
+        -64
+      ],
+      "id": "51cbe365-49b7-44d2-adab-3570f21568bf",
+      "name": "Send a message",
+      "webhookId": "869e2fc6-39ef-4c54-8dbf-44f4a79310c7",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "yhJDGv4k7puV9vkc",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "0133ff29-1736-48dc-b638-4855bc9303ee",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "10f237aeec4a8587e6297c5bcd4e2d8aa8a2765b3c774ad4a01a25ca837a5e1b"
+  },
+  "id": "cRzLm1bcpcloBGiy",
+  "tags": []
+}
