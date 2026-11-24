@@ -1,0 +1,29 @@
+{
+    "orderId":  "20240315-0042",
+    "customerName":  "  王小明  ",
+    "phone":  "0912",
+    "dineIn":  true,
+    "tableNo":  "A3",
+    "orderNote":  "蛋餅少辣",
+    "orderTime":  "2024-03-15T07:23:45+08:00",
+    "items":  [
+                  {
+                      "itemId":  "E001",
+                      "name":  "總匯蛋餅",
+                      "qty":  2,
+                      "price":  55
+                  },
+                  {
+                      "itemId":  "D003",
+                      "name":  "大杯豆漿",
+                      "qty":  1,
+                      "price":  30
+                  },
+                  {
+                      "itemId":  "B002",
+                      "name":  "奶油吐司",
+                      "qty":  0,
+                      "price":  25
+                  }
+              ]
+}

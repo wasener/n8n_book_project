@@ -1,0 +1,6 @@
+# 執行腳本產生的檔案（影片、截圖、驗證輸出）
+output/
+# Chrome 專用設定檔：內含 n8n 登入狀態，絕對不要上傳
+chrome-profile/
+__pycache__/
+*.pyc

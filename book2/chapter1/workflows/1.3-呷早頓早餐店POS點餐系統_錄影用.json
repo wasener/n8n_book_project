@@ -1,0 +1,503 @@
+{
+  "name": "【錄影用】呷早頓早餐店 POS 點餐系統",
+  "nodes": [
+    {
+      "id": "note-main",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        60,
+        140
+      ],
+      "parameters": {
+        "color": 5,
+        "width": 500,
+        "height": 140,
+        "content": "## 🍳 點餐主流程\n**營業時間：每日 06:00 ～ 11:00**\n\n顧客掃 QR Code → Webhook 接收訂單 JSON → 驗證清洗 → 時段判斷 → 計算金額 → LINE 廚房通知 → 回傳確認\n\n📌 測試方式：在「接收點餐訂單」節點按 **Execute Node**（已內建測試資料）"
+      }
+    },
+    {
+      "id": "note-daily",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        60,
+        640
+      ],
+      "parameters": {
+        "color": 6,
+        "width": 500,
+        "height": 120,
+        "content": "## 📊 日結報表流程\n**每日 11:30 自動觸發**\n\n取得當日訂單（模擬資料）→ 統計計算 → 寫入 Google Sheets\n\n⚙️ **測試**：模擬 6 筆訂單（5 完成、1 取消），直接按 Execute Workflow\n🔄 **正式上線**：將「取得當日訂單」Code 節點換成 HTTP Request 節點"
+      }
+    },
+    {
+      "id": "webhook-order",
+      "name": "接收點餐訂單",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        240,
+        320
+      ],
+      "webhookId": "qiaozaodun-pos-demo",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "qiaozaodun-order-demo",
+        "responseMode": "responseNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "code-validate",
+      "name": "訂單驗證與清洗",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        460,
+        320
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// ═══════════════════════════════════════════════════════\n// 節點②：訂單驗證與清洗\n// 功能：清洗姓名空白、驗證電話、處理備註空值、補全訂單號\n// ═══════════════════════════════════════════════════════\nconst item  = $input.first();\n// 實際 HTTP 呼叫時訂單包在 body 裡；編輯器的 pinned data 則沒有這一層\nconst order = item.json.body ?? item.json;\n\n// 1. 姓名清洗（去除前後空白）\nconst customerName = (order.customerName || '').trim();\nif (!customerName) throw new Error('顧客姓名不能為空');\n\n// 2. 電話格式驗證（10 碼純數字）\nconst phone = String(order.phone || '').trim();\nif (!/^\\d{10}$/.test(phone)) {\n  throw new Error('電話格式不正確（需 10 位數字）：' + phone);\n}\n\n// 3. 備註欄空值判斷\nconst orderNote = (order.orderNote || '').trim();\nconst hasNote   = orderNote.length > 0;\n\n// 4. 訂單時間轉換（若缺失則使用當下時間）\nconst orderTime = new Date(order.orderTime || new Date().toISOString());\n\n// 5. 品項非空驗證\nconst items = Array.isArray(order.items) ? order.items : [];\nif (items.length === 0) throw new Error('訂單品項不能為空');\n\n// 6. 補全訂單流水號（若前端未提供）\nconst todayStr = new Date().toLocaleDateString('zh-TW', { timeZone: 'Asia/Taipei' })\n                           .replace(/\\//g, '');\nconst seq      = String(Math.floor(Math.random() * 9000) + 1000);\nconst orderId  = order.orderId || (todayStr + '-' + seq);\n\nreturn [{\n  json: {\n    orderId,\n    customerName,\n    phone,\n    dineIn:    Boolean(order.dineIn ?? true),\n    tableNo:   order.tableNo || '—',\n    orderNote: hasNote ? orderNote : '',\n    hasNote,\n    orderTime:  orderTime.toISOString(),\n    items,\n    receivedAt: new Date().toISOString()\n  }\n}];"
+      }
+    },
+    {
+      "id": "if-hours",
+      "name": "營業時段判斷",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        680,
+        320
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "cond-gte-6",
+              "leftValue": "={{ $now.setZone('Asia/Taipei').hour }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gte",
+                "rightType": "number"
+              }
+            },
+            {
+              "id": "cond-lte-10",
+              "leftValue": "={{ $now.setZone('Asia/Taipei').hour }}",
+              "rightValue": 23,
+              "operator": {
+                "type": "number",
+                "operation": "lte",
+                "rightType": "number"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "code-calculate",
+      "name": "品項金額計算",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        900,
+        220
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// ═══════════════════════════════════════════════════════\n// 節點④：品項金額計算\n// 功能：過濾有效品項、計算含稅金額、組裝 LINE 廚房通知訊息\n// ═══════════════════════════════════════════════════════\nconst order = $input.first().json;\n\n// 1. 過濾有效品項（qty > 0）\nconst validItems = (order.items || [])\n  .filter(i => (i.qty || 0) > 0)\n  .map(i => ({\n    itemId:   i.itemId,\n    name:     i.name,\n    qty:      i.qty,\n    price:    i.price,\n    subtotal: i.price * i.qty\n  }));\n\nif (validItems.length === 0) throw new Error('無有效品項（所有品項數量為 0）');\n\n// 2. 金額計算（含 5% 稅，四捨五入）\nconst subtotal     = validItems.reduce((s, i) => s + i.subtotal, 0);\nconst totalWithTax = Math.round(subtotal * 1.05);\nconst taxAmount    = totalWithTax - subtotal;\nconst formattedTotal = 'NT$' + totalWithTax.toLocaleString('zh-TW');\n\n// 3. 廚房通知資料組裝\nconst itemNameList = validItems.map(i => i.name + ' ×' + i.qty).join('、');\nconst pickupCode   = order.orderId.replace(/[^0-9A-Za-z]/g, '').slice(-8).toUpperCase();\n\n// 4. 台灣時間格式化\nconst timeStr = new Date(order.orderTime).toLocaleTimeString('zh-TW', {\n  timeZone: 'Asia/Taipei', hour: '2-digit', minute: '2-digit', hour12: false\n});\n\n// 5. 組裝 LINE 廚房通知訊息（各行以 \\n 換行）\nconst msgLines = [\n  '🧾 新訂單 #' + order.orderId,\n  '⏰ ' + timeStr,\n  '🪑 ' + (order.dineIn ? '內用 ' + (order.tableNo || '—') : '外帶'),\n  '',\n  '📋 品項：' + itemNameList,\n  '💰 合計：' + formattedTotal + '（含稅）',\n  '🎫 取餐碼：' + pickupCode\n];\nif (order.hasNote && order.orderNote) {\n  msgLines.push('📝 備註：' + order.orderNote);\n}\nconst lineMessage = msgLines.join('\\n');\n\nreturn [{\n  json: {\n    ...order,\n    validItems,\n    itemCount:          validItems.length,\n    itemNameList,\n    subtotal,\n    taxAmount,\n    totalWithTax,\n    formattedTotal,\n    pickupCode,\n    orderTimeFormatted: timeStr,\n    lineMessage\n  }\n}];"
+      }
+    },
+    {
+      "id": "http-line-notify",
+      "name": "LINE 廚房通知",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1120,
+        220
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.line.me/v2/bot/message/push",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "options": {},
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"to\": \"YOUR_LINE_GROUP_ID_HERE\",\n  \"messages\": [\n    { \"type\": \"text\", \"text\": {{ JSON.stringify($json.lineMessage) }} }\n  ]\n}"
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "line-channel-token",
+          "name": "LINE Channel Access Token"
+        }
+      },
+      "notesInFlow": true,
+      "notes": "⚙️ 設定步驟：\n1. LINE Developers Console → 建立 Messaging API Channel\n2. 取得 Channel Access Token\n3. n8n 憑證 → 新增 HTTP Header Auth\n   Name: Authorization\n   Value: Bearer {Channel_Access_Token}\n4. 將 YOUR_LINE_GROUP_ID_HERE 換成廚房群組 ID"
+    },
+    {
+      "id": "respond-ok",
+      "name": "回傳訂單確認",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1340,
+        220
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"orderId\": {{ JSON.stringify($('品項金額計算').first().json.orderId) }},\n  \"pickupCode\": {{ JSON.stringify($('品項金額計算').first().json.pickupCode) }},\n  \"totalWithTax\": {{ $('品項金額計算').first().json.totalWithTax }},\n  \"formattedTotal\": {{ JSON.stringify($('品項金額計算').first().json.formattedTotal) }},\n  \"itemNameList\": {{ JSON.stringify($('品項金額計算').first().json.itemNameList) }},\n  \"message\": \"訂單已送出，請等候製作完成通知\",\n  \"estimatedMinutes\": 10\n}",
+        "options": {
+          "responseCode": 200
+        }
+      }
+    },
+    {
+      "id": "respond-closed",
+      "name": "非營業時間回應",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        900,
+        440
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"success\": false,\n  \"code\": \"OUT_OF_HOURS\",\n  \"message\": \"呷早頓目前非營業時間（06:00 ～ 11:00）\"\n}",
+        "options": {
+          "responseCode": 422
+        }
+      }
+    },
+    {
+      "id": "schedule-daily",
+      "name": "日結排程 11:30",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        240,
+        740
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "daysInterval": 1,
+              "triggerAtHour": 11,
+              "triggerAtMinute": 30
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "http-get-orders",
+      "name": "取得當日訂單",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        460,
+        740
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// ═══════════════════════════════════════════════════════\n// 日結流程 節點②：模擬當日訂單資料\n// ── 測試用途：直接在此節點產生假訂單資料 ──────────────\n// ── 正式上線時的替換方式 ──────────────────────────────\n// 1. 刪除此 Code 節點\n// 2. 加入 HTTP Request 節點，設定：\n//    Method: GET\n//    URL:    https://your-pos-api.example.com/api/orders\n//    Query:  date={{ $today.toFormat('yyyy-MM-dd') }}&status=all\n// ═══════════════════════════════════════════════════════\nconst today = $today.toFormat('yyyyMMdd');\n\nconst mockOrders = [\n  {\n    orderId: today + '-0001',\n    customerName: '王小明', phone: '0912345678',\n    dineIn: true, tableNo: 'A3', status: 'done',\n    totalWithTax: 147,\n    validItems: [\n      { name: '總匯蛋餅', qty: 2, price: 55, subtotal: 110 },\n      { name: '大杯豆漿', qty: 1, price: 30, subtotal: 30 }\n    ]\n  },\n  {\n    orderId: today + '-0002',\n    customerName: '李美玲', phone: '0923456789',\n    dineIn: false, tableNo: '—', status: 'done',\n    totalWithTax: 84,\n    validItems: [\n      { name: '火腿蛋土司', qty: 1, price: 45, subtotal: 45 },\n      { name: '中杯奶茶',   qty: 1, price: 35, subtotal: 35 }\n    ]\n  },\n  {\n    orderId: today + '-0003',\n    customerName: '張大偉', phone: '0934567890',\n    dineIn: true, tableNo: 'B1', status: 'done',\n    totalWithTax: 210,\n    validItems: [\n      { name: '總匯蛋餅',   qty: 2, price: 55, subtotal: 110 },\n      { name: '培根起司堡', qty: 1, price: 65, subtotal: 65 },\n      { name: '大杯紅茶',   qty: 1, price: 25, subtotal: 25 }\n    ]\n  },\n  {\n    orderId: today + '-0004',\n    customerName: '陳小芳', phone: '0945678901',\n    dineIn: true, tableNo: 'C2', status: 'cancelled',\n    totalWithTax: 0, validItems: []\n  },\n  {\n    orderId: today + '-0005',\n    customerName: '林志明', phone: '0956789012',\n    dineIn: false, tableNo: '—', status: 'done',\n    totalWithTax: 63,\n    validItems: [\n      { name: '起司蛋餅', qty: 1, price: 45, subtotal: 45 },\n      { name: '小杯豆漿', qty: 1, price: 20, subtotal: 20 }\n    ]\n  },\n  {\n    orderId: today + '-0006',\n    customerName: '黃雅婷', phone: '0967890123',\n    dineIn: true, tableNo: 'A1', status: 'done',\n    totalWithTax: 126,\n    validItems: [\n      { name: '鮪魚蛋餅', qty: 1, price: 55, subtotal: 55 },\n      { name: '培根起司堡', qty: 1, price: 65, subtotal: 65 }\n    ]\n  }\n];\n\n// 符合後續「日結統計計算」節點期望的輸出格式\nreturn mockOrders.map(order => ({ json: order }));"
+      }
+    },
+    {
+      "id": "code-daily-stat",
+      "name": "日結統計計算",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        680,
+        740
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// ═══════════════════════════════════════════════════════\n// 日結流程 節點③：日結統計計算\n// 功能：統計當日銷售數據、品項排行、整理報表資料\n// ═══════════════════════════════════════════════════════\nconst allOrders = $input.all().map(i => i.json);\nconst dateStr   = new Date().toLocaleDateString('zh-TW', {\n  timeZone: 'Asia/Taipei', year: 'numeric', month: '2-digit', day: '2-digit'\n});\n\n// 無訂單時回傳空報表\nif (allOrders.length === 0) {\n  return [{ json: {\n    reportDate:      dateStr,\n    totalCount:      0, completedCount: 0, cancelledCount: 0,\n    completionRate:  0,\n    totalRevenue:    0, formattedRevenue: 'NT$0',\n    avgOrderValue:   0, formattedAvg: 'NT$0',\n    maxAmount:       0, minAmount: 0,\n    topItems:        [], topItemsSummary: '今日無訂單',\n    generatedAt:     new Date().toISOString()\n  }}];\n}\n\nconst done      = allOrders.filter(o => o.status === 'done');\nconst cancelled = allOrders.filter(o => o.status === 'cancelled');\nconst revenues  = done.map(o => o.totalWithTax || 0);\n\nconst total    = revenues.reduce((s, v) => s + v, 0);\nconst avg      = done.length ? Math.round(total / done.length) : 0;\nconst maxAmt   = revenues.length ? Math.max(...revenues) : 0;\nconst minAmt   = revenues.length ? Math.min(...revenues) : 0;\nconst rate     = Math.round(done.length / allOrders.length * 100);\n\n// 品項銷售統計\nconst itemMap = {};\ndone.forEach(o => (o.validItems || []).forEach(it => {\n  if (!itemMap[it.name]) itemMap[it.name] = { name: it.name, qty: 0, rev: 0 };\n  itemMap[it.name].qty += it.qty      || 0;\n  itemMap[it.name].rev += it.subtotal || 0;\n}));\n\n// 前 5 名（依數量降序）\nconst topItems = Object.values(itemMap)\n  .sort((a, b) => b.qty - a.qty).slice(0, 5)\n  .map((it, i) => ({\n    rank:            i + 1,\n    name:            it.name,\n    totalQty:        it.qty,\n    totalRevenue:    it.rev,\n    formattedRevenue: 'NT$' + it.rev.toLocaleString('zh-TW')\n  }));\n\nreturn [{ json: {\n  reportDate:      dateStr,\n  totalCount:      allOrders.length,\n  completedCount:  done.length,\n  cancelledCount:  cancelled.length,\n  completionRate:  rate,\n  totalRevenue:    total,\n  formattedRevenue: 'NT$' + total.toLocaleString('zh-TW'),\n  avgOrderValue:   avg,\n  formattedAvg:    'NT$' + avg.toLocaleString('zh-TW'),\n  maxAmount:       maxAmt,\n  minAmount:       minAmt,\n  topItems,\n  topItemsSummary: topItems.map(i =>\n    i.rank + '. ' + i.name + '（' + i.totalQty + ' 份）'\n  ).join(' | '),\n  generatedAt: new Date().toISOString()\n}}];"
+      }
+    },
+    {
+      "id": "sheets-write",
+      "name": "寫入日結報表",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        900,
+        740
+      ],
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEETS_ID_HERE",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "日結報表",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "日期": "={{ $json.reportDate }}",
+            "總訂單數": "={{ $json.totalCount }}",
+            "完成訂單": "={{ $json.completedCount }}",
+            "取消訂單": "={{ $json.cancelledCount }}",
+            "完成率(%)": "={{ $json.completionRate }}",
+            "總營收(NT$)": "={{ $json.totalRevenue }}",
+            "平均客單價(NT$)": "={{ $json.avgOrderValue }}",
+            "最高單筆(NT$)": "={{ $json.maxAmount }}",
+            "最低單筆(NT$)": "={{ $json.minAmount }}",
+            "前5大品項": "={{ $json.topItemsSummary }}",
+            "產生時間": "={{ $json.generatedAt }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "日期",
+              "displayName": "日期",
+              "type": "string"
+            },
+            {
+              "id": "總訂單數",
+              "displayName": "總訂單數",
+              "type": "number"
+            },
+            {
+              "id": "完成訂單",
+              "displayName": "完成訂單",
+              "type": "number"
+            },
+            {
+              "id": "取消訂單",
+              "displayName": "取消訂單",
+              "type": "number"
+            },
+            {
+              "id": "完成率(%)",
+              "displayName": "完成率(%)",
+              "type": "number"
+            },
+            {
+              "id": "總營收(NT$)",
+              "displayName": "總營收(NT$)",
+              "type": "number"
+            },
+            {
+              "id": "平均客單價(NT$)",
+              "displayName": "平均客單價(NT$)",
+              "type": "number"
+            },
+            {
+              "id": "最高單筆(NT$)",
+              "displayName": "最高單筆(NT$)",
+              "type": "number"
+            },
+            {
+              "id": "最低單筆(NT$)",
+              "displayName": "最低單筆(NT$)",
+              "type": "number"
+            },
+            {
+              "id": "前5大品項",
+              "displayName": "前5大品項",
+              "type": "string"
+            },
+            {
+              "id": "產生時間",
+              "displayName": "產生時間",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "google-sheets-cred",
+          "name": "Google Sheets 帳號"
+        }
+      },
+      "notes": "⚙️ 設定步驟：\n1. n8n 憑證 → 新增 Google Sheets OAuth2\n2. 將 YOUR_GOOGLE_SHEETS_ID_HERE 換成試算表 ID\n   （Google Sheets 網址中 /d/ 後面的部分）\n3. 試算表需有名為「日結報表」的工作表\n4. 第 1 列建議設為標題列（欄位名稱與上方欄位對應）"
+    }
+  ],
+  "connections": {
+    "接收點餐訂單": {
+      "main": [
+        [
+          {
+            "node": "訂單驗證與清洗",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "訂單驗證與清洗": {
+      "main": [
+        [
+          {
+            "node": "營業時段判斷",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "營業時段判斷": {
+      "main": [
+        [
+          {
+            "node": "品項金額計算",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "非營業時間回應",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "品項金額計算": {
+      "main": [
+        [
+          {
+            "node": "LINE 廚房通知",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LINE 廚房通知": {
+      "main": [
+        [
+          {
+            "node": "回傳訂單確認",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "日結排程 11:30": {
+      "main": [
+        [
+          {
+            "node": "取得當日訂單",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "取得當日訂單": {
+      "main": [
+        [
+          {
+            "node": "日結統計計算",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "日結統計計算": {
+      "main": [
+        [
+          {
+            "node": "寫入日結報表",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {
+    "接收點餐訂單": [
+      {
+        "json": {
+          "orderId": "20240315-0042",
+          "customerName": "  王小明  ",
+          "phone": "0912345678",
+          "dineIn": true,
+          "tableNo": "A3",
+          "orderNote": "蛋餅少辣",
+          "orderTime": "2024-03-15T07:23:45+08:00",
+          "items": [
+            {
+              "itemId": "E001",
+              "name": "總匯蛋餅",
+              "qty": 2,
+              "price": 55
+            },
+            {
+              "itemId": "D003",
+              "name": "大杯豆漿",
+              "qty": 1,
+              "price": 30
+            },
+            {
+              "itemId": "B002",
+              "name": "奶油吐司",
+              "qty": 0,
+              "price": 25
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "",
+    "timezone": "Asia/Taipei"
+  },
+  "versionId": "c8a2f391-7d4e-4b29-8f5c-2e9a0d1b3c48",
+  "meta": {
+    "instanceId": "n8n-qiaozaodun-pos",
+    "templateCredsSetupCompleted": false
+  },
+  "tags": [
+    {
+      "id": "tag-pos",
+      "name": "POS"
+    },
+    {
+      "id": "tag-store",
+      "name": "呷早頓"
+    },
+    {
+      "id": "tag-level2",
+      "name": "Level2範例"
+    }
+  ]
+}
